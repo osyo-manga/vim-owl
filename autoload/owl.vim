@@ -39,9 +39,13 @@ function! s:key(dict, item, ...)
 endfunction
 
 
+let s:filename_cache = {}
 function! s:filename(SID, ...)
-	let scriptnames = get(a:, 1, s:scriptnames())
-	return get(scriptnames, a:SID, "")
+	if !has_key(s:filename_cache, a:SID)
+		let scriptnames = get(a:, 1, s:scriptnames())
+		let s:filename_cache[a:SID] = get(scriptnames, a:SID, "")
+	endif
+	return get(s:filename_cache, a:SID)
 endfunction
 
 
@@ -59,23 +63,6 @@ function! s:to_fileline(filename, funcname, slnum)
 endfunction
 
 
-function! owl#error_message(slnum, q_args)
-	let SNR = chained#called_func(1)
-	let SID =  chained#to_SID(SNR)
-	let funcname = chained#to_function_name(SNR)
-	let filename = s:filename(SID)
-	
-	return filename . ":" . s:to_fileline(filename, "s:".funcname, a:slnum) . ":" . "[failure] ".a:q_args
-endfunction
-
-
-function! owl#error_message_global(slnum, q_args, filename)
-	let filename = a:filename
-	let fileline = a:slnum
-	return filename . ":" . fileline . ":" . "failure[ ". a:q_args . " ]"
-endfunction
-
-
 function! owl#run(filename)
 	let SID = s:SID(s:to_slash_path(a:filename))
 	let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
@@ -90,21 +77,91 @@ function! owl#filename_to_SID(filename)
 	return s:key(s:scriptnames(), ".*".a:filename, "=~")
 endfunction
 
+
+function! s:to_SNR(SID)
+	return "<SNR>".a:SID."_"
+endfunction
+
+
+function! s:get_option(context, op, ...)
+	let default = get(a:, 1, "")
+	return get(extend(copy(g:), get(a:context, "local", {})), a:op, default)
+endfunction
+
+
+function! s:eval(expr, local, SID)
+	call extend(l:, a:local)
+	return eval(chained#script_function_to_function_symbol(a:expr, s:to_SNR(a:SID)))
+endfunction
+
+
+function! s:message_local(symbol, line, message)
+	let stymbol = a:symbol
+	let SID =  chained#to_SID(a:symbol)
+	let funcname = chained#to_function_name(a:symbol)
+	let filename = s:filename(SID)
+	return filename . ":" . s:to_fileline(filename, "s:".funcname, a:line) . ":" . a:message
+endfunction
+
+
+function! s:message_global(filename, line, message)
+	return a:filename . ":" . a:line . ":" . a:message
+endfunction
+
+function! s:message(context)
+	let line = get(a:context, "line", 0)
+	let msg = get(a:context, "message" , (a:context.type == "F" ? "[Failure] " : "[Success] ").a:context.expr)
+	let func_symbol = chained#latest_called_script_function(chained#call_stack()[:-2])
+	if empty(func_symbol)
+		echo s:message_global(get(a:context, "filename", " "), line, msg)
+	else
+		echo s:message_local(func_symbol, line, msg)
+	endif
+endfunction
+
+function! owl#check(context)
+	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function())))
+	if s:eval(a:context.expr, get(a:context, "local", {}), SID)
+		call s:message(extend({ "type" : "S" }, a:context))
+	else
+		call s:message(extend({ "type" : "F" }, a:context))
+	endif
+endfunction
+
+
+function! s:eval_op(context, op)
+	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function(chained#call_stack()[:-2]))))
+	return join(s:eval("[".a:context.expr."]", get(a:context, "local", {}), SID), " ".a:op." ")
+endfunction
+
+function! owl#equal(context)
+	let expr = s:eval_op(a:context, "==")
+	return owl#check(extend({ "expr" : expr }, a:context, "keep"))
+endfunction
+
+
+function! s:exception_id(exception)
+	return matchstr(a:exception, '\zsE\d*\ze:.*')
+endfunction
+
+
+function! owl#throw(context)
+	let expr = matchstr(a:context.expr, '\zs.*\ze,\s*.*')
+	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function())))
+
+	try
+		call s:eval(expr, get(a:context, "local", {}), SID)
+		call s:message(extend({ "type" : "F" }, a:context))
+	catch
+		if s:exception_id(v:exception) !=# matchstr(a:context.expr, '.*,\s*\zs.*\ze')
+			call s:message(extend({ "type" : "F" }, a:context))
+		else
+			call s:message(extend({ "type" : "S" }, a:context))
+		endif
+	endtry
+endfunction
+
+
 let &cpo = s:save_cpo
 unlet s:save_cpo
-
-finish
-
-
-" echo expand("<sfile>")
-
-function! s:main()
-	let test = "C:/vim/vim73-kaoriya-win32/vim73/ftplugin.vim"
-	echo s:key(s:scriptnames(), ".*autoload/owl.vim", "=~")
-	echo s:SID("autoload/owl.vim")
-	echo PP(s:scriptnames())
-endfunction
-call s:main()
-
-
 
