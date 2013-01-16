@@ -65,11 +65,22 @@ endfunction
 
 function! owl#run(filename)
 	let SID = s:SID(s:to_slash_path(a:filename))
+
 	let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
-" 	PP flist
+
+	let begin_func = "<SNR>".SID."_owl_begin"
+	if exists("*".begin_func)
+		call eval(begin_func."()")
+	endif
+
 	for func in flist
 		call eval(matchstr(func, "function \\zs.*\\ze"))
 	endfor
+
+	let end_func = "<SNR>".SID."_owl_end"
+	if exists("*".end_func)
+		call eval(end_func."()")
+	endif
 endfunction
 
 
@@ -111,7 +122,6 @@ function! s:print_message(format, file, line, expr, msg)
 	let result = substitute(result, 'owl_parsent_symbol', '%', "g")
 	return result
 endfunction
-
 
 
 function! s:message(context)
