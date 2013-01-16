@@ -85,7 +85,7 @@ endfunction
 
 function! s:get_option(context, op, ...)
 	let default = get(a:, 1, "")
-	return get(extend(copy(g:), get(a:context, "local", {})), a:op, default)
+	return get(a:context, a:op, get(extend(copy(g:), get(a:context, "local", {})), "owl_".a:op, default))
 endfunction
 
 
@@ -95,32 +95,49 @@ function! s:eval(expr, local, SID)
 endfunction
 
 
-function! s:message_local(symbol, line, message)
-	let stymbol = a:symbol
-	let SID =  chained#to_SID(a:symbol)
-	let funcname = chained#to_function_name(a:symbol)
-	let filename = s:filename(SID)
-	return filename . ":" . s:to_fileline(filename, "s:".funcname, a:line) . ":" . a:message
+function! s:print_message(format, file, line, expr, msg)
+	let rule = {
+\		"f" : a:file,
+\		"l" : a:line,
+\		"e" : a:expr,
+\		"m" : a:msg
+\	}
+
+	let result = a:format
+	let result = substitute(result, '%%', 'owl_parsent_symbol', "g")
+	for symbol in keys(rule)
+		let result = substitute(result, '%'. symbol, rule[symbol], "g")
+	endfor
+	let result = substitute(result, 'owl_parsent_symbol', '%', "g")
+	return result
 endfunction
 
 
-function! s:message_global(filename, line, message)
-	return a:filename . ":" . a:line . ":" . a:message
-endfunction
 
 function! s:message(context)
+	let type = (a:context.type == "F" ? "failure" : "success")
 	let line = get(a:context, "line", 0)
-	let msg = get(a:context, "message" , (a:context.type == "F" ? "[Failure] " : "[Success] ").a:context.expr)
+	let msg  = get(a:context, "message", "")
+	let expr = a:context.expr
 	let func_symbol = chained#latest_called_script_function(chained#call_stack()[:-2])
-	if empty(func_symbol)
-		echo s:message_global(get(a:context, "filename", " "), line, msg)
-	else
-		echo s:message_local(func_symbol, line, msg)
+
+	let format = s:get_option(a:context, type."_message_format", "%f:%l:%m %e")
+	if !empty(format)
+		if empty(func_symbol)
+			echo s:print_message(format, get(a:context, "filename", " "), line, expr, msg)
+		else
+			let SID =  chained#to_SID(func_symbol)
+			let funcname = chained#to_function_name(func_symbol)
+			let filename = s:filename(SID)
+
+			echo s:print_message(format, filename, s:to_fileline(filename, "s:".funcname, line), expr, msg)
+		endif
 	endif
 endfunction
 
+
 function! owl#check(context)
-	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function())))
+	let SID = s:get_option(a:context, "SID", chained#to_SID(chained#latest_called_script_function()))
 	if s:eval(a:context.expr, get(a:context, "local", {}), SID)
 		call s:message(extend({ "type" : "S" }, a:context))
 	else
@@ -130,8 +147,8 @@ endfunction
 
 
 function! s:eval_op(context, op)
-	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function(chained#call_stack()[:-2]))))
-	return join(s:eval("[".a:context.expr."]", get(a:context, "local", {}), SID), " ".a:op." ")
+	let SID = s:get_option(a:context, "SID", chained#to_SID(chained#latest_called_script_function(chained#call_stack()[:-2])))
+	return join(map(s:eval("[".a:context.expr."]", get(a:context, "local", {}), SID), "string(v:val)"), " ".a:op." ")
 endfunction
 
 function! owl#equal(context)
@@ -147,7 +164,7 @@ endfunction
 
 function! owl#throw(context)
 	let expr = matchstr(a:context.expr, '\zs.*\ze,\s*.*')
-	let SID = get(a:context, "SID", s:get_option(a:context, "owl_SID", chained#to_SID(chained#latest_called_script_function())))
+	let SID = s:get_option(a:context, "SID", chained#to_SID(chained#latest_called_script_function()))
 
 	try
 		call s:eval(expr, get(a:context, "local", {}), SID)
