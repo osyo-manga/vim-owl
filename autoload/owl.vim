@@ -49,9 +49,13 @@ function! s:filename(SID, ...)
 endfunction
 
 
+let s:SID_cache = {}
 function! s:SID(filename, ...)
-	let scriptnames = get(a:, 1, s:scriptnames())
-	return s:key(scriptnames, a:filename)
+	if !get(s:SID_cache, a:filename, 0)
+		let scriptnames = get(a:, 1, s:scriptnames())
+		let s:SID_cache[a:filename] = s:key(scriptnames, a:filename)
+	endif
+	return get(s:SID_cache, a:filename)
 endfunction
 
 
