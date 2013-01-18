@@ -8,7 +8,7 @@ function! s:to_slash_path(path)
 endfunction
 
 function! s:parse_scriptname(src)
-	return substitute(a:src, '\s*\(\d*\)\s*:\s*\(.*\)', '\=submatch(1). ":" . string(s:to_slash_path(submatch(2))) ', "g")
+	return substitute(a:src, '\s*\(\d*\)\s*:\s*\(.*\)', '\=submatch(1). ":" . string(s:to_slash_path(expand(submatch(2)))) ', "g")
 endfunction
 
 
@@ -41,7 +41,7 @@ endfunction
 
 let s:filename_cache = {}
 function! s:filename(SID, ...)
-	if !has_key(s:filename_cache, a:SID)
+	if !get(s:filename_cache, a:SID, 0)
 		let scriptnames = get(a:, 1, s:scriptnames())
 		let s:filename_cache[a:SID] = get(scriptnames, a:SID, "")
 	endif
@@ -65,7 +65,12 @@ endfunction
 
 function! owl#run(filename)
 	let SID = s:SID(s:to_slash_path(a:filename))
-
+	
+	if !SID
+		echo "Please ':source ".a:filename. "'"
+		return
+	endif
+	
 	let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
 
 	let begin_func = "<SNR>".SID."_owl_begin"
