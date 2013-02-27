@@ -1,0 +1,88 @@
+*owl.txt*	Vim script のユニットテストを行うためのプラグインです。
+
+
+==============================================================================
+概要						*owl-introduction*
+
+|owl.vim| は Vim script の簡単なユニットテストを行うためのプラグインです。
+他の Vim script ファイルで定義されているスクリプトローカル関数を別のファイル（テストファイル）でテストするような機能に特化しています。
+例えば、autoload/owl.vim で定義されているスクリプトローカル関数を test/autoload/owl.vim でテストするような事が出来ます。
+テストのチェック方法は基本的にコマンドを使用して定義します。
+
+
+また、|owl.vim| は下記のプラグインに依存しています。
+|owl.vim| を使用する場合は予め下記のプラグインを導入しておく必要があります。
+
+- chained.vim - https://github.com/osyo-manga/vim-chained
+- budou.vim   - https://github.com/osyo-manga/vim-budou
+
+
+==============================================================================
+使い方						*owl-usage*
+
+テストを行うための関数を定義し、その中にテストコードを記述していきます。
+
+>
+	function! s:plus(a, b)
+		return type(a:a) == type("") && type(a:b) == type("") 
+	\		? a:a . a:b
+	\		: a:a + a:b
+	endfunction
+
+
+	" テストコードを記述するスクリプトローカル関数を定義する
+	" s:test_{名前} 名で定義
+	function! s:test_plus_success()
+		" 引数の式が真であれば成功
+		" スクリプトローカル関数を渡すことが出来る
+		OwlCheck s:plus(1, 2) == 3
+
+		" ローカル変数を参照することも可能
+		let homumami = "homumami"
+		OwlCheck s:plus("homu", "mami") == homumami
+		
+		" OwlEqual s:plus(1, 2) ==  s:plus(5, -2) とほぼ等価
+		OwlEqual s:plus(1, 2), s:plus(5, -2)
+		
+		" 例外排出時のチェック
+		OwlThrow s:plus([], {}), E745
+	endfunction
+
+	function! s:test_plus_failure()
+		OwlCheck s:plus(1, 2) == 1
+
+		let mamihomu = "mamihomu"
+		OwlCheck s:plus("homu", "mami") == mamihomu
+
+		" OwlCheck とは違い
+		" s:plus(1, 2) と s:plus(5, -5) が評価された値が出力される
+		OwlEqual s:plus(1, 2), s:plus(5, -5)
+		
+		OwlThrow s:plus([], {}), E740
+	endfunction
+
+	" テストコードが書かれたファイル名を渡す
+	" 自動的に s:test_{名前} の関数を評価する
+	call owl#run(expand("<sfile>"))
+<
+出力例: >
+    D:/test/main.vim:31:[failure] s:plus(1, 2) == 1
+    D:/test/main.vim:35:[failure] s:plus("homu", "mami") == mamihomu
+    D:/test/main.vim:38:[failure] 3 == 0
+    D:/test/main.vim:41:[failure] s:plus([], {}), E740
+<
+
+
+==============================================================================
+インターフェース				*owl-interface*
+
+------------------------------------------------------------------------------
+コマンド					*owl-commands*
+
+:OwlCheck {expr}
+	{expr} を評価して、真であれば成功、偽であれば失敗となります。
+
+
+
+==============================================================================
+vim:tw=78:fo=tcq2mM:ts=8:ft=help:norl
