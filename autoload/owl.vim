@@ -93,6 +93,28 @@ function! owl#run(filename)
 endfunction
 
 
+function! owl#run_function(filename, funcname)
+	let SID = s:SID(s:to_slash_path(a:filename))
+	
+	if !SID
+		echo "Please ':source ".a:filename. "'"
+		return
+	endif
+
+	let begin_func = "<SNR>".SID."_owl_begin"
+	if exists("*".begin_func)
+		call eval(begin_func."()")
+	endif
+
+	call eval(chained#script_function_to_function_symbol(a:funcname."()", s:to_SNR(SID)))
+
+	let end_func = "<SNR>".SID."_owl_end"
+	if exists("*".end_func)
+		call eval(end_func."()")
+	endif
+endfunction
+
+
 function! owl#filename_to_SID(filename)
 	return s:key(s:scriptnames(), ".*".a:filename, "=~")
 endfunction

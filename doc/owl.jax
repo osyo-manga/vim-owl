@@ -90,6 +90,7 @@
 :OwlCheck {expr}
 	{expr} を評価して、真であれば成功、偽であれば失敗となります。
 
+
 ------------------------------------------------------------------------------
 関数						*owl-functions*
 
@@ -98,6 +99,10 @@ owl#run({filename})				*owl#run()*
 
 owl#run_function({filename}, {funcname})	*owl#run_function()*
 	{filename} に書かれている {funcname} 関数を実行して結果を出力します。
+
+owl#filename_to_SID({filename})			*owl#filename_to_SID()*
+	{filename} の SID を返します。
+	この関数はスクリプトローカル関数内でのみ使用出来ます。
 
 
 ==============================================================================
