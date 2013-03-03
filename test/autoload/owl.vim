@@ -1,15 +1,16 @@
 
+
+source <sfile>:p:h/owl_test.vim
+
 let s:filename = expand("<sfile>")
 
-let g:owl_success_message_format = ""
+" let g:owl_success_message_format = ""
 " let g:owl_success_message_format = "%f:%l:[Success] %e"
-let g:owl_failure_message_format = "%f:%l:[Failure] %e"
+" let g:owl_failure_message_format = "%f:%l:[Failure] %e"
 
-function! s:message()
-	let SID = chained#SID()
-	let filename = s:filename
-	let owl_SID = owl#filename_to_SID("vim-owl/autoload/owl.vim")
-	echo owl_SID
+
+function! s:plus(a, b)
+	return a:a + a:b
 endfunction
 
 
@@ -17,15 +18,6 @@ function! s:test_to_SNR()
 	let owl_SID = owl#filename_to_SID("vim-owl/autoload/owl.vim")
 	OwlCheck s:to_SNR(22) == "<SNR>22_"
 endfunction
-
-
-function! s:plus(a, b)
-	return a:a + a:b
-endfunction
-
-" call owl#check({
-" \	"expr" : "1 == 1",
-" \})
 
 
 function! s:test_check()
@@ -42,7 +34,7 @@ endfunction
 
 
 function! s:test_check_owl_SID()
-	let test_SID = owl#filename_to_SID("vim-owl/test/test.vim")
+	let test_SID = owl#filename_to_SID("vim-owl/test/autoload/owl_test.vim")
 	let g:owl_SID = test_SID
 
 	call owl#check({
@@ -102,7 +94,7 @@ endfunction
 
 
 function! s:test_equal_owl_SID()
-	let test_SID = owl#filename_to_SID("vim-owl/test/test.vim")
+	let test_SID = owl#filename_to_SID("vim-owl/test/autoload/owl_test.vim")
 	let g:owl_SID = test_SID
 
 	call owl#equal({
@@ -191,5 +183,16 @@ function! s:test_print_message()
 	OwlEqual s:print_message("%l%l%l", "file.vim", 10, "1", "homu"), "101010"
 endfunction
 
-call owl#run(expand("<sfile>"))
+
+
+function! s:owl_begin()
+" 	let g:owl_success_message_format = "%f:%l:[Success] %e"
+endfunction
+
+function! s:owl_end()
+" 	let g:owl_success_message_format = ""
+endfunction
+
+" call G_owl_run(expand("<sfile>"))
+" call owl#run(expand("<sfile>"))
 
