@@ -158,9 +158,9 @@ function! s:test_get_option()
 	unlet owl_hoge
 	OwlEqual s:get_option({ "local" : {} }, "hoge", 10), 36
 	unlet g:owl_hoge
+	OwlEqual s:get_option({ "local" : {} }, "hoge", 10), 10
 
 	OwlEqual s:get_option({ "hoge" : 42 }, "hoge", 10), 42
-
 endfunction
 
 

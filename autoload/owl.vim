@@ -140,8 +140,8 @@ endfunction
 
 
 function! s:get_option(context, op, ...)
-	let default = get(a:, 1, "")
-	return get(a:context, a:op, get(extend(copy(g:), get(a:context, "local", {})), "owl_".a:op, default))
+ 	let default = get(a:, 1, get(g:, "owl_".a:op, ""))
+	return get(a:context, a:op, get(get(a:context, "local", {}), "owl_".a:op, default))
 endfunction
 
 
