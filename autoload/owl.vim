@@ -69,6 +69,11 @@ endfunction
 
 function! owl#run(filename)
 	let filename = s:to_slash_path(fnamemodify(a:filename, ":p"))
+	if !filereadable(filename)
+		echo "Not read file ".filename
+		return
+	endif
+
 	try
 		execute "so" filename
 	catch /.*/
@@ -97,6 +102,11 @@ endfunction
 
 function! owl#run_function(filename, funcname)
 	let filename = s:to_slash_path(fnamemodify(a:filename, ":p"))
+	if !filereadable(filename)
+		echo "Not read file ".filename
+		return
+	endif
+
 	try
 		execute "so" filename
 	catch /.*/
