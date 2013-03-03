@@ -80,6 +80,47 @@
     D:/test/main.vim:41:[failure] s:plus([], {}), E740
 <
 
+------------------------------------------------------------------------------
+実行方法					*owl-usage-run*
+
+- コマンドを使用する
+	|:OwlRun| にテストを行うファイル名を渡して実行させます。
+	例: >
+		:OwlRun test.vim
+	<
+
+- 関数を使用する
+	|owl#run()| にテストを行うファイル名を渡して実行させます。
+	コマンドから直接関数を呼び出すか、
+	スクリプトファイルの最後に
+	>
+		call owl#run(expand("<sfile>"))
+	<
+	を記述して :so % してを実行させます。
+
+- quickrun.vim を使用する
+	thinca 氏が作成された quickrun.vim を用いてテストを実行させます。
+	quickrun.vim : https://github.com/thinca/vim-quickrun
+
+	|g:quickrun_config| に下記の設定を追加します。
+
+	>
+		let g:quickrun_config = {
+		\	"vim/owl_test" : {
+		\		'command': ':source',
+		\		'exec': ["%C %s", "call owl#run('%s')"],
+		\		"outputter" : "buffer",
+		\		"runner" : "vimscript",
+		\	},
+		\}
+	<
+	
+	設定を追加して
+	>
+		:QuickRun vim/owl_test
+	<
+	で、テストを実行させます。
+
 
 ==============================================================================
 インターフェース				*owl-interface*
@@ -87,7 +128,11 @@
 ------------------------------------------------------------------------------
 コマンド					*owl-commands*
 
-:OwlCheck {expr}
+:OwlRun [{filename}]				*:OwlRun*
+	{filename} のテストを実行します。
+	引数がない場合は現在のファイル名で実行します。
+
+:OwlCheck {expr}				*:OwlCheck*
 	{expr} を評価して、真であれば成功、偽であれば失敗となります。
 
 
@@ -96,9 +141,11 @@
 
 owl#run({filename})				*owl#run()*
 	{filename} に書かれているテストを実行して結果を出力します。
+	内部で :so {filename} されるので注意して下さい。
 
 owl#run_function({filename}, {funcname})	*owl#run_function()*
 	{filename} に書かれている {funcname} 関数を実行して結果を出力します。
+	内部で :so {filename} されるので注意して下さい。
 
 owl#filename_to_SID({filename})			*owl#filename_to_SID()*
 	{filename} の SID を返します。

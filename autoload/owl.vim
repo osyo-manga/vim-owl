@@ -68,13 +68,15 @@ endfunction
 
 
 function! owl#run(filename)
-	let SID = s:SID(s:to_slash_path(a:filename))
-	
-	if !SID
-		echo "Please ':source ".a:filename. "'"
+	let filename = s:to_slash_path(fnamemodify(a:filename, ":p"))
+	try
+		execute "so" filename
+	catch /.*/
+		echoerr v:exception
 		return
-	endif
-	
+	endtry
+
+	let SID = s:SID(filename)
 	let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
 
 	let begin_func = "<SNR>".SID."_owl_begin"
@@ -94,13 +96,15 @@ endfunction
 
 
 function! owl#run_function(filename, funcname)
-	let SID = s:SID(s:to_slash_path(a:filename))
-	
-	if !SID
-		echo "Please ':source ".a:filename. "'"
+	let filename = s:to_slash_path(fnamemodify(a:filename, ":p"))
+	try
+		execute "so" filename
+	catch /.*/
+		echoerr v:exception
 		return
-	endif
+	endtry
 
+	let SID = s:SID(filename)
 	let begin_func = "<SNR>".SID."_owl_begin"
 	if exists("*".begin_func)
 		call eval(begin_func."()")

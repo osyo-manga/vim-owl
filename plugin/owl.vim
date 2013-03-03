@@ -6,6 +6,14 @@ let g:loaded_owl = 1
 let s:save_cpo = &cpo
 set cpo&vim
 
+let g:owl_success_message_format = get(g:, "owl_success_message_format", "%f:%l:[Success] %e")
+let g:owl_failure_message_format = get(g:, "owl_failure_message_format", "%f:%l:[Failure] %e")
+
+
+command! -complete=file -nargs=*
+\	OwlRun
+\|	call owl#run(expand(empty(<q-args>) ? "%" : <q-args>))
+
 
 command! -nargs=*
 \	OwlCheck
@@ -33,9 +41,6 @@ command! -nargs=*
 \		"line" : expand("<slnum>"),
 \		"filename" : chained#is_function_cope() ? "" : expand("<sfile>"),
 \	})
-
-
-
 
 
 let &cpo = s:save_cpo
