@@ -12,7 +12,7 @@
 ==============================================================================
 概要						*owl-introduction*
 
-|owl.vim| は Vim script の簡単なユニットテストを行うためのプラグインです。
+*owl.vim* は Vim script の簡単なユニットテストを行うためのプラグインです。
 他の Vim script ファイルで定義されているスクリプトローカル関数を別のファイル（テストファイル）でテストするような機能に特化しています。
 例えば、autoload/owl.vim で定義されているスクリプトローカル関数を test/autoload/owl.vim でテストするような事が出来ます。
 テストのチェック方法は基本的にコマンドを使用して定義します。
@@ -130,11 +130,15 @@
 
 :OwlRun [{filename}]				*:OwlRun*
 	{filename} のテストを実行します。
-	引数がない場合は現在のファイル名で実行します。
+	引数がない場合は現在のバッファで開いているファイルを実行します。
 
 :OwlCheck {expr}				*:OwlCheck*
 	{expr} を評価して、真であれば成功、偽であれば失敗となります。
-
+	{expr} 内では、
+	- グローバル変数
+	- ローカル変数
+	- スクリプトローカル関数
+	が使用出来ます。
 
 ------------------------------------------------------------------------------
 関数						*owl-functions*
@@ -148,8 +152,26 @@ owl#run_function({filename}, {funcname})	*owl#run_function()*
 	内部で :so {filename} されるので注意して下さい。
 
 owl#filename_to_SID({filename})			*owl#filename_to_SID()*
-	{filename} の SID を返します。
-	この関数はスクリプトローカル関数内でのみ使用出来ます。
+	{filename} の "スクリプト固有の番号" を返します。
+	"スクリプト固有の番号" に関しては |<SID>| を参照して下さい。
+	また {filename} にはディレクトリ名を含めることも出来ます。
+	同名の {filename} が複数読み込まれている場合は、ディレクトリも一緒に指
+	定することで絞り込むことが出来ます。
+	{filename} が読み込まれていなければ 0 を返します。
+Example: >
+	" test.vim の SID を返す
+	echo owl#filename_to_SID("test.vim")
+
+	" owl.vim　の SID を返す
+	" plugin/owl.vim か autoload/owl.vim かは環境に依存する
+	echo owl#filename_to_SID("owl.vim")
+
+	" plugin/owl.vim の SID を返す
+	echo owl#filename_to_SID("plugin/owl.vim")
+
+	" autoload/owl.vim の SID を返す
+	echo owl#filename_to_SID("autoload/owl.vim")
+<
 
 
 ==============================================================================

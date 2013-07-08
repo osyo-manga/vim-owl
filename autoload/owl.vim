@@ -67,36 +67,49 @@ function! s:to_fileline(filename, funcname, slnum)
 endfunction
 
 
+let s:is_running = 0
 function! owl#run(filename)
+	if s:is_running
+		return
+	endif
+	let s:is_running = 1
 	let filename = s:to_slash_path(fnamemodify(a:filename, ":p"))
 	if !filereadable(filename)
 		echo "Not read file ".filename
+		let s:is_running = 0
 		return
 	endif
 
 	try
-		execute "so" filename
+		silent! execute "so" filename
 	catch /.*/
 		echoerr v:exception
+		let s:is_running = 0
 		return
 	endtry
 
-	let SID = s:SID(filename)
-	let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
+	try
+		let SID = s:SID(filename)
+		let flist = filter(s:function(), "chained#to_SID(v:val) == SID && chained#to_function_name(v:val) =~ 'test_.*'")
 
-	let begin_func = "<SNR>".SID."_owl_begin"
-	if exists("*".begin_func)
-		call eval(begin_func."()")
-	endif
+		let begin_func = "<SNR>".SID."_owl_begin"
+		if exists("*".begin_func)
+			call eval(begin_func."()")
+		endif
 
-	for func in flist
-		call eval(matchstr(func, "function \\zs.*\\ze"))
-	endfor
+		for func in flist
+			call eval(matchstr(func, "function \\zs.*\\ze"))
+		endfor
 
-	let end_func = "<SNR>".SID."_owl_end"
-	if exists("*".end_func)
-		call eval(end_func."()")
-	endif
+		let end_func = "<SNR>".SID."_owl_end"
+		if exists("*".end_func)
+			call eval(end_func."()")
+		endif
+	catch
+		echoerr v:exception
+	finally
+		let s:is_running = 0
+	endtry
 endfunction
 
 
