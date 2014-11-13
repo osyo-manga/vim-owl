@@ -12,7 +12,7 @@ let g:owl_failure_message_format = get(g:, "owl_failure_message_format", "%f:%l:
 
 command! -complete=file -nargs=*
 \	OwlRun
-\|	call owl#run(expand(empty(<q-args>) ? "%" : <q-args>))
+\|	call owl#run(expand(empty(<q-args>) ? expand("%:p") : <q-args>))
 
 
 command! -nargs=*
